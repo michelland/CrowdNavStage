@@ -213,7 +213,9 @@ class CrowdSim(gym.Env):
 
     def generate_random_obstacle_position(self):
         px = (np.random.random() - 0.5) * self.square_width
+        px = 0
         py = (np.random.random() - 0.5) * self.square_width
+        py = 1
         obstacle = Obstacle(self.config, 'obstacles', px, py)
         return obstacle
 
@@ -368,6 +370,25 @@ class CrowdSim(gym.Env):
             elif closest_dist < dmin:
                 dmin = closest_dist
 
+        # collision detection with obstacles
+        for i, obstacle in enumerate(self.obstacles):
+            px = obstacle.px - self.robot.px
+            py = obstacle.py - self.robot.py
+            if self.robot.kinematics == 'holonomic':
+                vx = -action.vx
+                vy = -action.vy
+            else:
+                vx = -action.v * np.cos(action.r + self.robot.theta)
+                vy = -action.v * np.sin(action.r + self.robot.theta)
+            ex = px + vx * self.time_step
+            ey = py + vy * self.time_step
+            # closest distance between boundaries of two agents
+            closest_dist = point_to_segment_dist(px, py, ex, ey, 0, 0) - obstacle.radius - self.robot.radius
+            if closest_dist < 0:
+                collision = True
+                logging.debug("Collision: distance between robot and p{} is {:.2E}".format(i, closest_dist))
+                break
+
         # collision detection between humans
         human_num = len(self.humans)
         for i in range(human_num):
@@ -426,12 +447,16 @@ class CrowdSim(gym.Env):
 
             # compute the observation
             if self.robot.sensor == 'coordinates':
-                ob = [human.get_observable_state() for human in self.humans]
+                ob_humans = [human.get_observable_state() for human in self.humans]
+                ob_obstacles = [obstacle.get_observable_state() for obstacle in self.obstacles]
+                ob = ob_humans + ob_obstacles
             elif self.robot.sensor == 'RGB':
                 raise NotImplementedError
         else:
             if self.robot.sensor == 'coordinates':
-                ob = [human.get_next_observable_state(action) for human, action in zip(self.humans, human_actions)]
+                ob_humans = [human.get_next_observable_state(action) for human, action in zip(self.humans, human_actions)]
+                ob_obstacles = [obstacle.get_observable_state() for obstacle in self.obstacles]
+                ob = ob_humans + ob_obstacles
             elif self.robot.sensor == 'RGB':
                 raise NotImplementedError
 
@@ -511,14 +536,20 @@ class CrowdSim(gym.Env):
             robot_positions = [state[0].position for state in self.states]
             goal = mlines.Line2D([0], [4], color=goal_color, marker='*', linestyle='None', markersize=15, label='Goal')
             robot = plt.Circle(robot_positions[0], self.robot.radius, fill=True, color=robot_color)
-            ax.add_artist(robot)
-            ax.add_artist(goal)
-            plt.legend([robot, goal], ['Robot', 'Goal'], fontsize=16)
-
             # add obstacles
+            obstacle_rectangle = None
             for obstacle in self.obstacles:
                 obstacle_rectangle = plt.Circle(obstacle.get_position(), obstacle.radius, fill=True, color='g')
                 ax.add_artist(obstacle_rectangle)
+            ax.add_artist(robot)
+            ax.add_artist(goal)
+            if obstacle_rectangle is None:
+                plt.legend([robot, goal], ['Robot', 'Goal'], fontsize=16)
+            else:
+                plt.legend([robot, goal, obstacle_rectangle], ['Robot', 'Goal', 'Obstacle'], fontsize=16)
+
+
+
 
             # add humans and their numbers
             human_positions = [[state[1][j].position for j in range(len(self.humans))] for state in self.states]

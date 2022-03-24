@@ -1,4 +1,5 @@
 import logging
+from crowd_sim.envs.utils.state import ObservableState
 
 
 class Obstacle(object):
@@ -19,3 +20,6 @@ class Obstacle(object):
     def set_position(self, position):
         self.px = position[0]
         self.py = position[1]
+
+    def get_observable_state(self):
+        return ObservableState(self.px, self.py, 0, 0, self.radius)

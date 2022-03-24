@@ -6,6 +6,7 @@ import rvo2
 from matplotlib import patches
 from numpy.linalg import norm
 from crowd_sim.envs.utils.human import Human
+from crowd_sim.envs.utils.obstacle import Obstacle
 from crowd_sim.envs.utils.info import *
 from crowd_sim.envs.utils.utils import point_to_segment_dist
 
@@ -47,9 +48,13 @@ class CrowdSim(gym.Env):
         self.states = None
         self.action_values = None
         self.attention_weights = None
+        # obstacles
+        self.obstacles = None
+        self.obstacle_num = None
 
     def configure(self, config):
         self.config = config
+        self.obstacle_num = config.getint('sim', 'obstacle_num')
         self.time_limit = config.getint('env', 'time_limit')
         self.time_step = config.getfloat('env', 'time_step')
         self.randomize_attributes = config.getboolean('env', 'randomize_attributes')
@@ -206,6 +211,17 @@ class CrowdSim(gym.Env):
         human.set(px, py, gx, gy, 0, 0, 0)
         return human
 
+    def generate_random_obstacle_position(self):
+        px = (np.random.random() - 0.5) * self.square_width
+        py = (np.random.random() - 0.5) * self.square_width
+        obstacle = Obstacle(self.config, 'obstacles', px, py)
+        return obstacle
+
+    def generate_random_obstacles(self, obstacle_num):
+        self.obstacles = []
+        for i in range(obstacle_num):
+            self.obstacles.append(self.generate_random_obstacle_position())
+
     def get_human_times(self):
         """
         Run the whole simulation to the end and compute the average time for human to reach goal.
@@ -277,8 +293,10 @@ class CrowdSim(gym.Env):
                 if phase in ['train', 'val']:
                     human_num = self.human_num if self.robot.policy.multiagent_training else 1
                     self.generate_random_human_position(human_num=human_num, rule=self.train_val_sim)
+                    self.generate_random_obstacles(obstacle_num=self.obstacle_num)
                 else:
                     self.generate_random_human_position(human_num=self.human_num, rule=self.test_sim)
+                    self.generate_random_obstacles(obstacle_num=self.obstacle_num)
                 # case_counter is always between 0 and case_size[phase]
                 self.case_counter[phase] = (self.case_counter[phase] + 1) % self.case_size[phase]
             else:
@@ -431,7 +449,6 @@ class CrowdSim(gym.Env):
         goal_color = 'red'
         arrow_color = 'red'
         arrow_style = patches.ArrowStyle("->", head_length=4, head_width=2)
-
         if mode == 'human':
             fig, ax = plt.subplots(figsize=(7, 7))
             ax.set_xlim(-4, 4)
@@ -497,6 +514,11 @@ class CrowdSim(gym.Env):
             ax.add_artist(robot)
             ax.add_artist(goal)
             plt.legend([robot, goal], ['Robot', 'Goal'], fontsize=16)
+
+            # add obstacles
+            for obstacle in self.obstacles:
+                obstacle_rectangle = plt.Circle(obstacle.get_position(), obstacle.radius, fill=True, color='g')
+                ax.add_artist(obstacle_rectangle)
 
             # add humans and their numbers
             human_positions = [[state[1][j].position for j in range(len(self.humans))] for state in self.states]

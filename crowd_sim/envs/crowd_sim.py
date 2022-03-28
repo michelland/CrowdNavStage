@@ -340,9 +340,11 @@ class CrowdSim(gym.Env):
 
         """
         human_actions = []
+        ob_obstacles = [obstacle.get_observable_state() for obstacle in self.obstacles]
         for human in self.humans:
             # observation for humans is always coordinates
             ob = [other_human.get_observable_state() for other_human in self.humans if other_human != human]
+            ob += ob_obstacles
             if self.robot.visible:
                 ob += [self.robot.get_observable_state()]
             human_actions.append(human.act(ob))

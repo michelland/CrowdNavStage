@@ -61,7 +61,7 @@ class CrowdSim(gym.Env):
         self.config = config
         self.obstacle_num = config.getint('sim', 'obstacle_num')
         self.map_path = "maps/" + config.get('obstacles', 'map') + ".txt"
-        self.map = Map(self.map_path)
+        self.map = Map(config, self.map_path)
         self.time_limit = config.getint('env', 'time_limit')
         self.time_step = config.getfloat('env', 'time_step')
         self.randomize_attributes = config.getboolean('env', 'randomize_attributes')
@@ -347,7 +347,7 @@ class CrowdSim(gym.Env):
 
         """
         human_actions = []
-        ob_obstacles = [obstacle.get_observable_state() for obstacle in self.obstacles]
+        ob_obstacles = [obstacle.get_observable_state() for obstacle in self.map.obstacles]
         for human in self.humans:
             # observation for humans is always coordinates
             ob = [other_human.get_observable_state() for other_human in self.humans if other_human != human]
@@ -380,7 +380,7 @@ class CrowdSim(gym.Env):
                 dmin = closest_dist
 
         # collision detection with obstacles
-        for i, obstacle in enumerate(self.obstacles):
+        for i, obstacle in enumerate(self.map.obstacles):
             px = obstacle.px - self.robot.px
             py = obstacle.py - self.robot.py
             if self.robot.kinematics == 'holonomic':
@@ -457,14 +457,14 @@ class CrowdSim(gym.Env):
             # compute the observation
             if self.robot.sensor == 'coordinates':
                 ob_humans = [human.get_observable_state() for human in self.humans]
-                ob_obstacles = [obstacle.get_observable_state() for obstacle in self.obstacles]
+                ob_obstacles = [obstacle.get_observable_state() for obstacle in self.map.obstacles]
                 ob = ob_humans + ob_obstacles
             elif self.robot.sensor == 'RGB':
                 raise NotImplementedError
         else:
             if self.robot.sensor == 'coordinates':
                 ob_humans = [human.get_next_observable_state(action) for human, action in zip(self.humans, human_actions)]
-                ob_obstacles = [obstacle.get_observable_state() for obstacle in self.obstacles]
+                ob_obstacles = [obstacle.get_observable_state() for obstacle in self.map.obstacles]
                 ob = ob_humans + ob_obstacles
             elif self.robot.sensor == 'RGB':
                 raise NotImplementedError

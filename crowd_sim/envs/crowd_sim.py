@@ -7,6 +7,7 @@ from matplotlib import patches
 from numpy.linalg import norm
 from crowd_sim.envs.utils.human import Human
 from crowd_sim.envs.utils.obstacle import Obstacle
+from crowd_sim.envs.utils.map import Map
 from crowd_sim.envs.utils.info import *
 from crowd_sim.envs.utils.utils import point_to_segment_dist
 
@@ -51,10 +52,16 @@ class CrowdSim(gym.Env):
         # obstacles
         self.obstacles = None
         self.obstacle_num = None
+        # map
+        self.map_path = None
+        self.map = None
+
 
     def configure(self, config):
         self.config = config
         self.obstacle_num = config.getint('sim', 'obstacle_num')
+        self.map_path = "maps/" + config.get('obstacles', 'map') + ".txt"
+        self.map = Map(self.map_path)
         self.time_limit = config.getint('env', 'time_limit')
         self.time_step = config.getfloat('env', 'time_step')
         self.randomize_attributes = config.getboolean('env', 'randomize_attributes')
@@ -213,10 +220,10 @@ class CrowdSim(gym.Env):
 
     def generate_random_obstacle_position(self):
         px = (np.random.random() - 0.5) * self.square_width
-        px = 0
+        px = -6
         py = (np.random.random() - 0.5) * self.square_width
-        py = 1
-        obstacle = Obstacle(self.config, 'obstacles', px, py)
+        py = -6
+        obstacle = Obstacle(px, py, 0.5)
         return obstacle
 
     def generate_random_obstacles(self, obstacle_num):
@@ -540,7 +547,7 @@ class CrowdSim(gym.Env):
             robot = plt.Circle(robot_positions[0], self.robot.radius, fill=True, color=robot_color)
             # add obstacles
             obstacle_rectangle = None
-            for obstacle in self.obstacles:
+            for obstacle in self.map.obstacles:
                 obstacle_rectangle = plt.Circle(obstacle.get_position(), obstacle.radius, fill=True, color='g')
                 ax.add_artist(obstacle_rectangle)
             ax.add_artist(robot)

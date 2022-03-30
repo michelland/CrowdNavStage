@@ -3,13 +3,13 @@ from crowd_sim.envs.utils.state import ObservableState
 
 
 class Obstacle(object):
-    def __init__(self, config, section, px, py):
+    def __init__(self, px, py, radius):
         """
         Base class for obstacles
         """
         self.px = px
         self.py = py
-        self.radius = config.getfloat(section, 'radius')
+        self.radius = radius
 
     def print_info(self):
         logging.info(f"Obstacle is in position ({self.px},{self.py})")

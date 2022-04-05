@@ -10,10 +10,12 @@ class Map(object):
         self.radius = config.getfloat('obstacles', 'radius')
         self.grid = np.loadtxt(path, dtype=int)
         self.obstacles = []
-        for i in range(0,13):
-            for j in range(0,13):
+        self.size = int(path.split(sep='_')[1])
+        print(f'map size : {self.size}')
+        for i in range(0,(2 * self.size) + 1):
+            for j in range(0,(2 * self.size) + 1):
                 if self.grid[i,j] == 1:
-                    self.obstacles.append(Obstacle(j - 6, 6 - i, self.radius))
+                    self.obstacles.append(Obstacle(j - self.size, self.size - i, self.radius))
 
     def print_info(self):
         info = "obstacles at positions :"

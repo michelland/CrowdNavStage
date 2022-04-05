@@ -536,8 +536,8 @@ class CrowdSim(gym.Env):
         elif mode == 'video':
             fig, ax = plt.subplots(figsize=(7, 7))
             ax.tick_params(labelsize=16)
-            ax.set_xlim(-6, 6)
-            ax.set_ylim(-6, 6)
+            ax.set_xlim(-self.map.size, self.map.size)
+            ax.set_ylim(-self.map.size, self.map.size)
             ax.set_xlabel('x(m)', fontsize=16)
             ax.set_ylabel('y(m)', fontsize=16)
 

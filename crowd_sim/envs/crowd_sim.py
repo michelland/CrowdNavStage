@@ -412,6 +412,8 @@ class CrowdSim(gym.Env):
         # check if reaching the goal
         end_position = np.array(self.robot.compute_position(action, self.time_step))
         reaching_goal = norm(end_position - np.array(self.robot.get_goal_position())) < self.robot.radius
+        print(f"end position {self.robot.get_position()}")
+        # print(f"distance cible : { norm(end_position - np.array(self.robot.get_goal_position()))})")
 
         if self.global_time >= self.time_limit - 1:
             reward = 0
@@ -543,7 +545,7 @@ class CrowdSim(gym.Env):
 
             # add robot and its goal
             robot_positions = [state[0].position for state in self.states]
-            goal = mlines.Line2D([0], [4], color=goal_color, marker='*', linestyle='None', markersize=15, label='Goal')
+            goal = mlines.Line2D([0], [self.robot.get_goal_position()[1]], color=goal_color, marker='*', linestyle='None', markersize=15, label='Goal')
             robot = plt.Circle(robot_positions[0], self.robot.radius, fill=True, color=robot_color)
             # add obstacles
             obstacle_rectangle = None

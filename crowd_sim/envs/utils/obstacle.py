@@ -12,6 +12,7 @@ class Obstacle(object):
         self.px = px
         self.py = py
         self.radius = radius
+        self.shape = ''
 
     def print_info(self):
         logging.info(f"Obstacle is in position ({self.px},{self.py})")
@@ -26,22 +27,31 @@ class Obstacle(object):
     @abc.abstractmethod
     def get_observable_state(self):
         """
-        Retourne l'état observable de l'obstacle
+        Returns obstacle's observable state
         """
         return
 
+    @abc.abstractmethod
+    def get_shape(self):
+        """
+        Returns obstacle's shape
+        """
+        return
 
 class ObstacleCircle(Obstacle):
     def __init__(self, px, py, radius):
         super().__init__(px, py, radius)
+        self.shape = 'circle'
 
     def get_observable_state(self):
-        return ObservableState(self.px, self.py, 0, 0, self.radius)
+        return ObstacleState(self.shape, self.px, self.py, self.radius)
+
 
 
 class ObstacleRectangle(Obstacle):
     def __init__(self, px, py, radius):
         super().__init__(px, py, radius)
+        self.shape = 'rectangle'
         self.vertices = []
         self.vertices.append((px - 0.5, py + 0.5))
         self.vertices.append((px + 0.5, py + 0.5))
@@ -49,4 +59,4 @@ class ObstacleRectangle(Obstacle):
         self.vertices.append((px - 0.5, py - 0.5))
 
     def get_observable_state(self):
-        return ObstacleState(self.px, self.py, self.radius, self.vertices)
+        return ObstacleState(self.shape, self.px, self.py, self.radius, vertices=self.vertices)

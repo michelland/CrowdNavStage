@@ -41,7 +41,8 @@ class ObservableState(object):
 
 
 class ObstacleState(object):
-    def __init__(self, px, py, radius, vertices):
+    def __init__(self, shape, px, py, radius, vertices=None):
+        self.shape = shape
         self.px = px
         self.py = py
         self.radius = radius

@@ -551,7 +551,11 @@ class CrowdSim(gym.Env):
             # add obstacles
             obstacle_rectangle = None
             for obstacle in self.map.obstacles:
-                obstacle_rectangle = plt.Circle(obstacle.get_position(), obstacle.radius, fill=True, color='g')
+                if obstacle.shape == 'circle':
+                    obstacle_rectangle = plt.Circle(obstacle.get_position(), obstacle.radius, fill=True, color='g')
+                elif obstacle.shape == 'rectangle':
+                    obstacle_rectangle = plt.Rectangle(obstacle.vertices[3], obstacle.radius * 2, obstacle.radius * 2, fill=True, color='g')
+
                 ax.add_artist(obstacle_rectangle)
             ax.add_artist(robot)
             ax.add_artist(goal)

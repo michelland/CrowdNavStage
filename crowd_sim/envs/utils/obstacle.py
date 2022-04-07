@@ -31,12 +31,6 @@ class Obstacle(object):
         """
         return
 
-    @abc.abstractmethod
-    def get_shape(self):
-        """
-        Returns obstacle's shape
-        """
-        return
 
 class ObstacleCircle(Obstacle):
     def __init__(self, px, py, radius):
@@ -44,8 +38,7 @@ class ObstacleCircle(Obstacle):
         self.shape = 'circle'
 
     def get_observable_state(self):
-        return ObstacleState(self.shape, self.px, self.py, self.radius)
-
+        return ObservableState(self.px, self.py, 0, 0, self.radius)
 
 
 class ObstacleRectangle(Obstacle):

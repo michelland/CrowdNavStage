@@ -91,7 +91,7 @@ class ORCA(Policy):
         :return:
         """
         self_state = state.self_state
-        obstacle_state = state.obstacle_states
+        obstacle_states = state.obstacle_states
         params = self.neighbor_dist, self.max_neighbors, self.time_horizon, self.time_horizon_obst
         if self.sim is not None and self.sim.getNumAgents() != len(state.human_states) + 1:
             del self.sim
@@ -103,6 +103,8 @@ class ORCA(Policy):
             for human_state in state.human_states:
                 self.sim.addAgent(human_state.position, *params, human_state.radius + 0.01 + self.safety_space,
                                   self.max_speed, human_state.velocity)
+            for obstacle_state in state.obstacle_states:
+                self.sim.addObstacle(obstacle_state.vertices)
         else:
             self.sim.setAgentPosition(0, self_state.position)
             self.sim.setAgentVelocity(0, self_state.velocity)
@@ -111,6 +113,7 @@ class ORCA(Policy):
                 self.sim.setAgentVelocity(i + 1, human_state.velocity)
 
         # Set the preferred velocity to be a vector of unit magnitude (speed) in the direction of the goal.
+        self.sim.processObstacles()
         velocity = np.array((self_state.gx - self_state.px, self_state.gy - self_state.py))
         speed = np.linalg.norm(velocity)
         pref_vel = velocity / speed if speed > 1 else velocity

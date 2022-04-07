@@ -335,11 +335,13 @@ class CrowdSim(gym.Env):
         # get current observation
         if self.robot.sensor == 'coordinates':
             ob = [human.get_observable_state() for human in self.humans]
-            ob_obstacles = [obstacle.get_observable_state() for obstacle in self.map.obstacles]
+            ob_obstacles_circle = [obstacle.get_observable_state() for obstacle in self.map.obstacles_circle]
+            ob += ob_obstacles_circle
+            ob_obstacles_rectangle = [obstacle.get_observable_state() for obstacle in self.map.obstacles_rectangle]
         elif self.robot.sensor == 'RGB':
             raise NotImplementedError
 
-        return (ob, ob_obstacles)
+        return (ob, ob_obstacles_rectangle)
 
     def onestep_lookahead(self, action):
         return self.step(action, update=False)
@@ -350,13 +352,15 @@ class CrowdSim(gym.Env):
 
         """
         human_actions = []
-        ob_obstacles = [obstacle.get_observable_state() for obstacle in self.map.obstacles]
+        ob_obstacles_rectangle = [obstacle.get_observable_state() for obstacle in self.map.obstacles_rectangle]
+        ob_obstacle_circle = [obstacle.get_observable_state() for obstacle in self.map.obstacles_circle]
         for human in self.humans:
             # observation for humans is always coordinates
             ob = [other_human.get_observable_state() for other_human in self.humans if other_human != human]
+            ob += ob_obstacle_circle
             if self.robot.visible:
                 ob += [self.robot.get_observable_state()]
-            human_actions.append(human.act((ob, ob_obstacles)))
+            human_actions.append(human.act((ob, ob_obstacles_rectangle)))
 
         # collision detection
         dmin = float('inf')
@@ -382,7 +386,7 @@ class CrowdSim(gym.Env):
                 dmin = closest_dist
 
         # collision detection with obstacles
-        for i, obstacle in enumerate(self.map.obstacles):
+        for i, obstacle in enumerate(self.map.obstacles_rectangle + self.map.obstacles_circle):
             px = obstacle.px - self.robot.px
             py = obstacle.py - self.robot.py
             if self.robot.kinematics == 'holonomic':
@@ -460,14 +464,18 @@ class CrowdSim(gym.Env):
             # compute the observation
             if self.robot.sensor == 'coordinates':
                 ob_humans = [human.get_observable_state() for human in self.humans]
-                ob_obstacles = [obstacle.get_observable_state() for obstacle in self.map.obstacles]
-                ob = (ob_humans, ob_obstacles)
+                ob_obstacle_circle = [obstacle.get_observable_state() for obstacle in self.map.obstacles_circle]
+                ob_humans += ob_obstacle_circle
+                ob_obstacles_rectangle = [obstacle.get_observable_state() for obstacle in self.map.obstacles_rectangle]
+                ob = (ob_humans, ob_obstacles_rectangle)
             elif self.robot.sensor == 'RGB':
                 raise NotImplementedError
         else:
             if self.robot.sensor == 'coordinates':
                 ob_humans = [human.get_next_observable_state(action) for human, action in zip(self.humans, human_actions)]
-                ob_obstacles = [obstacle.get_observable_state() for obstacle in self.map.obstacles]
+                ob_obstacle_circle = [obstacle.get_observable_state() for obstacle in self.map.obstacles_circle]
+                ob_humans += ob_obstacle_circle
+                ob_obstacles = [obstacle.get_observable_state() for obstacle in self.map.obstacles_rectangle]
                 ob = (ob_humans, ob_obstacles)
             elif self.robot.sensor == 'RGB':
                 raise NotImplementedError
@@ -550,12 +558,12 @@ class CrowdSim(gym.Env):
             robot = plt.Circle(robot_positions[0], self.robot.radius, fill=True, color=robot_color)
             # add obstacles
             obstacle_rectangle = None
-            for obstacle in self.map.obstacles:
-                if obstacle.shape == 'circle':
-                    obstacle_rectangle = plt.Circle(obstacle.get_position(), obstacle.radius, fill=True, color='g')
-                elif obstacle.shape == 'rectangle':
-                    obstacle_rectangle = plt.Rectangle(obstacle.vertices[3], obstacle.radius * 2, obstacle.radius * 2, fill=True, color='g')
-
+            for obstacle in self.map.obstacles_rectangle:
+                obstacle_rectangle = plt.Rectangle(obstacle.vertices[3], obstacle.radius * 2, obstacle.radius * 2,
+                                                   fill=True, color='g')
+                ax.add_artist(obstacle_rectangle)
+            for obstacle in self.map.obstacles_circle:
+                obstacle_rectangle = plt.Circle(obstacle.get_position(), obstacle.radius, fill=True, color='g')
                 ax.add_artist(obstacle_rectangle)
             ax.add_artist(robot)
             ax.add_artist(goal)

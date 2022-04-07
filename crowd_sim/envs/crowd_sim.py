@@ -62,6 +62,7 @@ class CrowdSim(gym.Env):
         self.obstacle_num = config.getint('sim', 'obstacle_num')
         self.map_path = "maps/" + config.get('obstacles', 'map') + ".txt"
         self.map = Map(config, self.map_path)
+        self.map.print_info()
         self.time_limit = config.getint('env', 'time_limit')
         self.time_step = config.getfloat('env', 'time_step')
         self.randomize_attributes = config.getboolean('env', 'randomize_attributes')
@@ -330,13 +331,15 @@ class CrowdSim(gym.Env):
         if hasattr(self.robot.policy, 'get_attention_weights'):
             self.attention_weights = list()
 
+        ob_obstacles = None
         # get current observation
         if self.robot.sensor == 'coordinates':
             ob = [human.get_observable_state() for human in self.humans]
+            ob_obstacles = [obstacle.get_observable_state() for obstacle in self.map.obstacles]
         elif self.robot.sensor == 'RGB':
             raise NotImplementedError
 
-        return ob
+        return (ob, ob_obstacles)
 
     def onestep_lookahead(self, action):
         return self.step(action, update=False)
@@ -351,10 +354,9 @@ class CrowdSim(gym.Env):
         for human in self.humans:
             # observation for humans is always coordinates
             ob = [other_human.get_observable_state() for other_human in self.humans if other_human != human]
-            ob += ob_obstacles
             if self.robot.visible:
                 ob += [self.robot.get_observable_state()]
-            human_actions.append(human.act(ob))
+            human_actions.append(human.act((ob, ob_obstacles)))
 
         # collision detection
         dmin = float('inf')
@@ -412,7 +414,6 @@ class CrowdSim(gym.Env):
         # check if reaching the goal
         end_position = np.array(self.robot.compute_position(action, self.time_step))
         reaching_goal = norm(end_position - np.array(self.robot.get_goal_position())) < self.robot.radius
-        print(f"end position {self.robot.get_position()}")
         # print(f"distance cible : { norm(end_position - np.array(self.robot.get_goal_position()))})")
 
         if self.global_time >= self.time_limit - 1:
@@ -460,14 +461,14 @@ class CrowdSim(gym.Env):
             if self.robot.sensor == 'coordinates':
                 ob_humans = [human.get_observable_state() for human in self.humans]
                 ob_obstacles = [obstacle.get_observable_state() for obstacle in self.map.obstacles]
-                ob = ob_humans + ob_obstacles
+                ob = (ob_humans, ob_obstacles)
             elif self.robot.sensor == 'RGB':
                 raise NotImplementedError
         else:
             if self.robot.sensor == 'coordinates':
                 ob_humans = [human.get_next_observable_state(action) for human, action in zip(self.humans, human_actions)]
                 ob_obstacles = [obstacle.get_observable_state() for obstacle in self.map.obstacles]
-                ob = ob_humans + ob_obstacles
+                ob = (ob_humans, ob_obstacles)
             elif self.robot.sensor == 'RGB':
                 raise NotImplementedError
 

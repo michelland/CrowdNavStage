@@ -12,6 +12,6 @@ class Human(Agent):
         :param ob:
         :return:
         """
-        state = JointState(self.get_full_state(), ob)
+        state = JointState(self.get_full_state(), ob[0])
         action = self.policy.predict(state)
         return action

@@ -105,6 +105,7 @@ class ORCA(Policy):
                                   self.max_speed, human_state.velocity)
             for obstacle_state in state.obstacle_states:
                 self.sim.addObstacle(obstacle_state.vertices)
+            self.sim.processObstacles()
         else:
             self.sim.setAgentPosition(0, self_state.position)
             self.sim.setAgentVelocity(0, self_state.velocity)
@@ -113,7 +114,7 @@ class ORCA(Policy):
                 self.sim.setAgentVelocity(i + 1, human_state.velocity)
 
         # Set the preferred velocity to be a vector of unit magnitude (speed) in the direction of the goal.
-        self.sim.processObstacles()
+
         velocity = np.array((self_state.gx - self_state.px, self_state.gy - self_state.py))
         speed = np.linalg.norm(velocity)
         pref_vel = velocity / speed if speed > 1 else velocity
